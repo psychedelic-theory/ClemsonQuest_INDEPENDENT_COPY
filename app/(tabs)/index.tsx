@@ -1,98 +1,126 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { useMemo } from 'react';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Colors } from '@/constants/theme';
+import { useUser } from '@/contexts/user-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { name } = useUser();
+  const colorScheme = useColorScheme() ?? 'light';
+  const firstName = name ? name.split(' ')[0] : 'Explorer';
+  const insets = useSafeAreaInsets();
+  const cardBackground = useThemeColor(
+    { light: 'rgba(245,102,0,0.12)', dark: 'rgba(82,45,128,0.45)' },
+    'accent'
+  );
+  const accentBorder = useThemeColor({}, 'accent');
+  const highlight = useThemeColor({}, 'tint');
+  const cardStyle = useMemo(
+    () => [styles.card, { backgroundColor: cardBackground, borderColor: accentBorder }],
+    [cardBackground, accentBorder]
+  );
+  const containerStyle = useMemo(
+    () => [styles.container, { paddingTop: Math.max(insets.top, 16) + 8 }],
+    [insets.top]
+  );
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
+  return (
+    <ThemedView style={containerStyle}>
+      <ThemedText type="title" style={[styles.title, { color: highlight }]}>
+        Welcome back, {firstName}!
+      </ThemedText>
+      <ThemedText style={styles.subtitle}>
+        Earn points by showing up, cheering others on, and completing quests across campus.
+      </ThemedText>
+      <View style={[styles.progressRow, { borderColor: highlight }]}>
+        <View style={[styles.progressFill, { backgroundColor: highlight }]} />
+        <ThemedText type="defaultSemiBold" style={styles.progressText}>
+          120 pts · Next reward at 200 pts
+        </ThemedText>
+      </View>
+      <ThemedView style={cardStyle}>
+        <View style={[styles.cardBadge, { backgroundColor: highlight }]}>
+          <ThemedText style={styles.cardBadgeText} lightColor="#FFFFFF" darkColor="#FFFFFF">
+            Daily Quest
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.cardText}>
+          Introduce yourself to someone in your major and share one fun fact about yourself.
         </ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+      <ThemedView style={cardStyle}>
+        <View style={[styles.cardBadge, { backgroundColor: Colors[colorScheme].accent }]}>
+          <ThemedText style={styles.cardBadgeText} lightColor="#FFFFFF" darkColor="#FFFFFF">
+            Trending Events
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.cardText}>
+          Tigers After Dark • Study Jam Session • Campus Run Club Meetup
         </ThemedText>
       </ThemedView>
-    </ParallaxScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 24,
+    gap: 24,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  subtitle: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  progressRow: {
+    borderWidth: 1,
+    borderRadius: 999,
+    padding: 8,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  progressFill: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: '60%',
+    opacity: 0.18,
+  },
+  progressText: {
+    textAlign: 'center',
+  },
+  card: {
+    padding: 20,
+    borderRadius: 16,
+    gap: 12,
+    borderWidth: 1,
+  },
+  cardBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  cardBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  cardText: {
+    fontSize: 16,
+    lineHeight: 24,
   },
 });

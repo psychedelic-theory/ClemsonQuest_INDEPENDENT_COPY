@@ -5,25 +5,27 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const clemsonOrange = '#F56600';
+const clemsonPurple = '#522D80';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#1F1A3D',
+    background: '#FFFFFF',
+    tint: clemsonOrange,
+    accent: clemsonPurple,
+    icon: '#5D3A9A',
+    tabIconDefault: '#9D9DB8',
+    tabIconSelected: clemsonOrange,
   },
   dark: {
     text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    background: '#1B133C',
+    tint: clemsonOrange,
+    accent: clemsonPurple,
+    icon: '#C8B6FF',
+    tabIconDefault: '#8676B8',
+    tabIconSelected: clemsonOrange,
   },
 };
 
