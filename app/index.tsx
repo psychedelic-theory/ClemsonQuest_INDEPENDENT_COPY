@@ -64,7 +64,7 @@ export default function LoginScreen() {
             </ThemedText>
           </View>
           <ThemedText type="title" style={[styles.title, { color: buttonBackground }]}>
-            TigerQuest
+            ClemsonQuest
           </ThemedText>
           <ThemedText style={styles.subtitle}>
             Sign in to start connecting with fellow students.
