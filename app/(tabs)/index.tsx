@@ -6,28 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
-import { useUser } from '@/contexts/user-context';
+import { Team, useUser } from '@/contexts/user-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
-
-const TEAM_RANKINGS = [
-  { position: 1, name: 'Orange Team', points: '3,050', delta: '+120 ahead', color: '#F56600' },
-  { position: 2, name: 'Blue Team', points: '2,850', delta: 'You', color: '#2979FF' },
-  { position: 3, name: 'Purple Team', points: '2,720', delta: '-130 behind', color: '#9C27B0' },
-];
-
-const RECENT_ACTIVITY = [
-  { title: 'Sarah completed “Library Photo”', timeAgo: '2m ago' },
-  { title: 'Blue Team gained 200 pts', timeAgo: '5m ago' },
-  { title: 'New task available!', timeAgo: '8m ago' },
-];
+import { Link, useLocalSearchParams } from 'expo-router';
+import { Confetti } from "react-native-fast-confetti";
 
 export default function HomeScreen() {
-  const { name } = useUser();
+  const { name, teams, setTeams } = useUser();
   const colorScheme = useColorScheme() ?? 'light';
   const firstName = name ? name.split(' ')[0] : 'Explorer';
-  const insets = useSafeAreaInsets();
+  const insets =useSafeAreaInsets();
+
+  const { status } = useLocalSearchParams();
 
   const highlight = useThemeColor({}, 'tint');
   const accent = useThemeColor({}, 'accent');
@@ -64,7 +55,44 @@ export default function HomeScreen() {
     [elevatedSurface]
   );
 
+  const userTeam = teams.find(t => t.name == 'Blue Team')!;
+
+  const TITLE = `${name} took a photo of someone wearing Clemson Orange`;
+
+  function TeamView({ position, team }: { position: number, team: Team }) {
+    const diff = team.points - userTeam.points;
+    return (
+      <View style={styles.rankRow}>
+        <View style={styles.rankLeft}>
+          <ThemedText type="defaultSemiBold" style={styles.rankPosition}>
+            #{position + 1}
+          </ThemedText>
+          <View style={[styles.rankDot, { backgroundColor: team.color }]} />
+          <ThemedText>{team.name}</ThemedText>
+        </View>
+        <View style={styles.rankRight}>
+          <ThemedText type="defaultSemiBold" style={styles.rankPoints}>
+            {team.points.toLocaleString()}
+          </ThemedText>
+          <ThemedText
+            style={[
+              styles.rankDelta,
+              { color: team.name === userTeam.name ? highlight : subtleText },
+            ]}
+          >
+            {userTeam.name == team.name ? 'You' : (diff > 0 ? '+' : '-') + diff + (diff > 0 ? " ahead" : " behind")}
+          </ThemedText>
+        </View>
+      </View>
+    );
+
+  }
+
+  const isComplete = userTeam.activity.some(a => a.title == TITLE);
+
   return (
+    <>
+    <Confetti />
     <ThemedView style={containerStyle}>
       <ScrollView
         contentContainerStyle={scrollContentStyle}
@@ -81,11 +109,11 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
           <View style={styles.teamInfo}>
-            <View style={[styles.teamChip, { borderColor: accent }]}>
-              <View style={[styles.teamDot, { backgroundColor: Colors[colorScheme].accent }]} />
-              <ThemedText type="defaultSemiBold">Blue Team</ThemedText>
+            <View style={[styles.teamChip, { borderColor: userTeam.color }]}>
+              <View style={[styles.teamDot, { backgroundColor: userTeam.color }]} />
+              <ThemedText type="defaultSemiBold">{userTeam.name}</ThemedText>
             </View>
-            <ThemedText style={[styles.teamRank, { color: subtleText }]}>Rank #2</ThemedText>
+            <ThemedText style={[styles.teamRank, { color: subtleText }]}>Rank #{teams.indexOf(userTeam) + 1}</ThemedText>
           </View>
         </View>
 
@@ -103,7 +131,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={elevatedCardStyle}>
+        {!isComplete && <View style={elevatedCardStyle}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionTitleChip, { backgroundColor: badgeSurface }]}>
               <MaterialIcons name="bolt" size={18} color={accent} />
@@ -124,12 +152,12 @@ export default function HomeScreen() {
             <MetaItem icon="star" label="150 pts" color={metaIconColor} />
             <MetaItem icon="schedule" label="1h 20m left" color={metaIconColor} />
           </View>
-          <Pressable style={[styles.ctaButton, { backgroundColor: accent }]}>
+          <Link href="/scan" style={[styles.ctaButton, { backgroundColor: accent }]}>
             <ThemedText style={styles.ctaText} lightColor="#FFFFFF" darkColor="#FFFFFF">
               Start
             </ThemedText>
-          </Pressable>
-        </View>
+          </Link>
+        </View>}
 
         <View style={cardStyle}>
           <View style={styles.sectionHeader}>
@@ -144,30 +172,7 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
           <View style={styles.rankList}>
-            {TEAM_RANKINGS.map((team) => (
-              <View key={team.position} style={styles.rankRow}>
-                <View style={styles.rankLeft}>
-                  <ThemedText type="defaultSemiBold" style={styles.rankPosition}>
-                    #{team.position}
-                  </ThemedText>
-                  <View style={[styles.rankDot, { backgroundColor: team.color }]} />
-                  <ThemedText>{team.name}</ThemedText>
-                </View>
-                <View style={styles.rankRight}>
-                  <ThemedText type="defaultSemiBold" style={styles.rankPoints}>
-                    {team.points}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.rankDelta,
-                      { color: team.delta === 'You' ? highlight : subtleText },
-                    ]}
-                  >
-                    {team.delta}
-                  </ThemedText>
-                </View>
-              </View>
-            ))}
+            {teams.map((team, index) => <TeamView key={team.name} position={index} team={team} />)}
           </View>
         </View>
 
@@ -181,7 +186,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.activityList}>
-            {RECENT_ACTIVITY.map((item, index) => (
+            {teams.flatMap(team => team.activity).map((item, index) => (
               <View key={`${item.title}-${index}`} style={styles.activityRow}>
                 <ThemedText style={styles.activityText}>{item.title}</ThemedText>
                 <ThemedText style={[styles.activityTime, { color: subtleText }]}>
@@ -192,7 +197,8 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </ThemedView>
+    </Confett>
+    </>
   );
 }
 

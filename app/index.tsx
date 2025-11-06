@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -51,61 +51,58 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: Math.max(insets.top, 24) }]}>
+    <ThemedView style={{ flex: 1 }}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        style={styles.avoidingView}
+        behavior={Platform.select({ ios: 'padding', android: 'height' })}
+        style={{ flex: 1 }}
       >
-        <ThemedView style={styles.content}>
-          <View style={[styles.badge, { backgroundColor: badgeBackground }]}>
-            <ThemedText style={styles.badgeText} lightColor="#FFFFFF" darkColor="#FFFFFF">
-              Connect • Compete • Celebrate
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.content}>
+            <ThemedText type="title" style={[styles.title, { color: buttonBackground }]}>
+              ClemsonQuest
             </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              Sign in to start connecting with fellow students.
+            </ThemedText>
+            <TextInput
+              placeholder="Your name"
+              placeholderTextColor={Colors[colorScheme].icon}
+              value={input}
+              onChangeText={(text) => {
+                setInput(text);
+                if (error) {
+                  setError('');
+                }
+              }}
+              onSubmitEditing={handleContinue}
+              returnKeyType="done"
+              autoCapitalize="words"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: inputBackground,
+                  color: Colors[colorScheme].text,
+                  borderColor: accentColor,
+                },
+              ]}
+            />
+            {!!error && (
+              <ThemedText lightColor="#d93025" darkColor="#ff6f6f" style={styles.errorText}>
+                {error}
+              </ThemedText>
+            )}
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: buttonBackground }]}
+              onPress={handleContinue}
+              activeOpacity={0.9}
+            >
+              <ThemedText style={[styles.buttonText, { color: buttonTextColor }]}>
+                Continue
+              </ThemedText>
+            </TouchableOpacity>
           </View>
-          <ThemedText type="title" style={[styles.title, { color: buttonBackground }]}>
-            ClemsonQuest
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Sign in to start connecting with fellow students.
-          </ThemedText>
-          <TextInput
-            placeholder="Your name"
-            placeholderTextColor={Colors[colorScheme].icon}
-            value={input}
-            onChangeText={(text) => {
-              setInput(text);
-              if (error) {
-                setError('');
-              }
-            }}
-            onSubmitEditing={handleContinue}
-            returnKeyType="done"
-            autoCapitalize="words"
-            style={[
-              styles.input,
-              {
-                backgroundColor: inputBackground,
-                color: Colors[colorScheme].text,
-                borderColor: accentColor,
-              },
-            ]}
-          />
-          {!!error && (
-            <ThemedText lightColor="#d93025" darkColor="#ff6f6f" style={styles.errorText}>
-              {error}
-            </ThemedText>
-          )}
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: buttonBackground }]}
-            onPress={handleContinue}
-            activeOpacity={0.9}
-          >
-            <ThemedText style={[styles.buttonText, { color: buttonTextColor }]}>
-              Continue
-            </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+        </SafeAreaView>
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -123,6 +120,8 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 16,
+    flex: 1,
+    justifyContent: 'center'
   },
   badge: {
     alignSelf: 'center',
