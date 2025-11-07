@@ -6,16 +6,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Team, useUser } from '@/contexts/user-context';
+import { useUser } from '@/contexts/user-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Link, useLocalSearchParams } from 'expo-router';
 
 export default function HomeScreen() {
-  const { name, teams, setTeams } = useUser();
+  const { name, firstName: profileFirstName, teams } = useUser();
   const colorScheme = useColorScheme() ?? 'light';
-  const firstName = name ? name.split(' ')[0] : 'Explorer';
-  const insets =useSafeAreaInsets();
+  const firstName = profileFirstName || (name ? name.split(' ')[0] : 'Explorer');
+  const insets = useSafeAreaInsets();
 
   const { status } = useLocalSearchParams();
 
@@ -57,35 +57,6 @@ export default function HomeScreen() {
   const userTeam = teams.find(t => t.name == 'Blue Team')!;
 
   const TITLE = `${name} took a photo of someone wearing Clemson Orange`;
-
-  function TeamView({ position, team }: { position: number, team: Team }) {
-    const diff = team.points - userTeam.points;
-    return (
-      <View style={styles.rankRow}>
-        <View style={styles.rankLeft}>
-          <ThemedText type="defaultSemiBold" style={styles.rankPosition}>
-            #{position + 1}
-          </ThemedText>
-          <View style={[styles.rankDot, { backgroundColor: team.color }]} />
-          <ThemedText>{team.name}</ThemedText>
-        </View>
-        <View style={styles.rankRight}>
-          <ThemedText type="defaultSemiBold" style={styles.rankPoints}>
-            {team.points.toLocaleString()}
-          </ThemedText>
-          <ThemedText
-            style={[
-              styles.rankDelta,
-              { color: team.name === userTeam.name ? highlight : subtleText },
-            ]}
-          >
-            {userTeam.name == team.name ? 'You' : (diff > 0 ? '+' : '-') + diff + (diff > 0 ? " ahead" : " behind")}
-          </ThemedText>
-        </View>
-      </View>
-    );
-
-  }
 
   const isComplete = userTeam.activity.some(a => a.title == TITLE);
 
@@ -129,6 +100,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
+
         {!isComplete && <View style={elevatedCardStyle}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionTitleChip, { backgroundColor: badgeSurface }]}>
@@ -156,23 +128,6 @@ export default function HomeScreen() {
             </ThemedText>
           </Link>
         </View>}
-
-        <View style={cardStyle}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionTitleChip, { backgroundColor: badgeSurface }]}>
-              <MaterialIcons name="emoji-events" size={18} color={accent} />
-              <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-                Team Rankings
-              </ThemedText>
-            </View>
-            <ThemedText type="defaultSemiBold" style={[styles.viewAll, { color: highlight }]}>
-              View All
-            </ThemedText>
-          </View>
-          <View style={styles.rankList}>
-            {teams.map((team, index) => <TeamView key={team.name} position={index} team={team} />)}
-          </View>
-        </View>
 
         <View style={cardStyle}>
           <View style={styles.sectionHeader}>
@@ -362,37 +317,6 @@ const styles = StyleSheet.create({
   },
   viewAll: {
     fontSize: 14,
-  },
-  rankList: {
-    gap: 14,
-  },
-  rankRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rankLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  rankPosition: {
-    fontSize: 16,
-  },
-  rankDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 12,
-  },
-  rankRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  rankPoints: {
-    fontSize: 16,
-  },
-  rankDelta: {
-    fontSize: 13,
   },
   activityList: {
     gap: 14,

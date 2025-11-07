@@ -1,17 +1,39 @@
-import { createContext, SetStateAction, useContext, useMemo, useState, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createContext,
+  SetStateAction,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 export type Team = {
   name: string;
   points: number;
   color: string;
   activity: Activity[];
-}
+};
 
-export type Activity = { title: string, timeAgo: string };
+export type Activity = { title: string; timeAgo: string };
+
+type UserProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+};
 
 type UserContextValue = {
   name: string;
-  setName: (value: string) => void;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isProfileHydrated: boolean;
+  isLoading: boolean;
+  setUserProfile: (profile: UserProfile) => void;
+  logout: () => Promise<void>;
   teams: Team[];
   setTeams: React.Dispatch<SetStateAction<Team[]>>;
 };
@@ -19,7 +41,12 @@ type UserContextValue = {
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [name, setName] = useState('');
+  const [profile, setProfile] = useState<UserProfile>({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+  const [isProfileHydrated, setProfileHydrated] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
   {
       name: 'Orange Team',
@@ -45,13 +72,71 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       ]
     },
-])
-  const value = useMemo(() => ({
-    name,
-    setName,
-    teams,
-    setTeams
-  }), [name, teams]);
+  ]);
+
+  useEffect(() => {
+    AsyncStorage.getItem('cq:user-profile')
+      .then((stored) => {
+        if (!stored) return;
+        try {
+          const parsed = JSON.parse(stored) as Partial<UserProfile>;
+          setProfile((prev) => ({
+            firstName: parsed.firstName ?? prev.firstName,
+            lastName: parsed.lastName ?? prev.lastName,
+            email: parsed.email ?? prev.email,
+          }));
+        } catch {
+          // ignore malformed cache
+        }
+      })
+      .finally(() => setProfileHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (!isProfileHydrated) return;
+    const isEmptyProfile = !profile.firstName && !profile.lastName && !profile.email;
+    if (isEmptyProfile) {
+      AsyncStorage.removeItem('cq:user-profile').catch(() => {});
+      return;
+    }
+    AsyncStorage.setItem('cq:user-profile', JSON.stringify(profile)).catch(() => {});
+  }, [isProfileHydrated, profile]);
+
+  const setUserProfile = useCallback((nextProfile: UserProfile) => {
+    setProfile(nextProfile);
+  }, []);
+
+  const name = useMemo(() => {
+    const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
+    return fullName || 'Explorer';
+  }, [profile.firstName, profile.lastName]);
+
+  const { firstName, lastName, email } = profile;
+
+  const logout = useCallback(async () => {
+    await AsyncStorage.removeItem('cq:user-profile');
+    setProfile({
+      firstName: '',
+      lastName: '',
+      email: '',
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      name,
+      firstName,
+      lastName,
+      email,
+      isProfileHydrated,
+      isLoading: !isProfileHydrated,
+      setUserProfile,
+      logout,
+      teams,
+      setTeams,
+    }),
+    [email, firstName, isProfileHydrated, lastName, logout, name, setUserProfile, teams]
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,10 +18,18 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUser } from '@/contexts/user-context';
 
+const CLEMSON_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@clemson\.edu$/i;
+
 export default function LoginScreen() {
   const router = useRouter();
-  const { setName } = useUser();
-  const [input, setInput] = useState('');
+  const { firstName, lastName, email, setUserProfile } = useUser();
+  const lastNameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const [formValues, setFormValues] = useState({
+    firstName,
+    lastName,
+    email,
+  });
   const [error, setError] = useState('');
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
@@ -31,24 +39,68 @@ export default function LoginScreen() {
     'background'
   );
   const buttonBackground = useThemeColor({}, 'tint');
-  const badgeBackground = useThemeColor(
-    { light: 'rgba(82,45,128,0.9)', dark: 'rgba(82,45,128,0.7)' },
-    'accent'
-  );
   const buttonTextColor = '#FFFFFF';
   const accentColor = useThemeColor({}, 'accent');
 
+  useEffect(() => {
+    setFormValues({
+      firstName,
+      lastName,
+      email,
+    });
+  }, [email, firstName, lastName]);
+
+  const handleChange = (field: keyof typeof formValues) => (value: string) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+    if (error) {
+      setError('');
+    }
+  };
+
+  const trimmedFirst = formValues.firstName.trim();
+  const trimmedLast = formValues.lastName.trim();
+  const trimmedEmail = formValues.email.trim().toLowerCase();
+  const isSubmitDisabled =
+    !trimmedFirst || !trimmedLast || !CLEMSON_EMAIL_REGEX.test(trimmedEmail);
+
   const handleContinue = () => {
-    const trimmed = input.trim();
-    if (!trimmed) {
-      setError('Please enter your name to continue.');
+    if (!trimmedFirst) {
+      setError('Please enter your first name.');
+      return;
+    }
+    if (!trimmedLast) {
+      setError('Please enter your last name.');
+      return;
+    }
+    if (!trimmedEmail) {
+      setError('Please enter your Clemson email.');
+      return;
+    }
+    if (!CLEMSON_EMAIL_REGEX.test(trimmedEmail)) {
+      setError('Use a Clemson email that ends with @clemson.edu.');
       return;
     }
 
     setError('');
-    setName(trimmed);
+    setUserProfile({
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      email: trimmedEmail,
+    });
     router.replace('/(tabs)');
   };
+
+  const contentStyle = useMemo(
+    () => [
+      styles.content,
+      {
+        paddingHorizontal: 24,
+        paddingTop: Math.max(32, insets.top + 16),
+        paddingBottom: Math.max(32, insets.bottom + 24),
+      },
+    ],
+    [insets.bottom, insets.top]
+  );
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -58,7 +110,7 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.content}>
+          <View style={contentStyle}>
             <ThemedText type="title" style={[styles.title, { color: buttonBackground }]}>
               ClemsonQuest
             </ThemedText>
@@ -66,18 +118,54 @@ export default function LoginScreen() {
               Sign in to start connecting with fellow students.
             </ThemedText>
             <TextInput
-              placeholder="Your name"
+              placeholder="First name"
               placeholderTextColor={Colors[colorScheme].icon}
-              value={input}
-              onChangeText={(text) => {
-                setInput(text);
-                if (error) {
-                  setError('');
-                }
-              }}
+              value={formValues.firstName}
+              onChangeText={handleChange('firstName')}
+              onSubmitEditing={() => lastNameInputRef.current?.focus()}
+              returnKeyType="next"
+              autoCapitalize="words"
+              autoComplete="given-name"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: inputBackground,
+                  color: Colors[colorScheme].text,
+                  borderColor: accentColor,
+                },
+              ]}
+            />
+            <TextInput
+              ref={lastNameInputRef}
+              placeholder="Last name"
+              placeholderTextColor={Colors[colorScheme].icon}
+              value={formValues.lastName}
+              onChangeText={handleChange('lastName')}
+              onSubmitEditing={() => emailInputRef.current?.focus()}
+              returnKeyType="next"
+              autoCapitalize="words"
+              autoComplete="family-name"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: inputBackground,
+                  color: Colors[colorScheme].text,
+                  borderColor: accentColor,
+                },
+              ]}
+            />
+            <TextInput
+              ref={emailInputRef}
+              placeholder="Clemson email"
+              placeholderTextColor={Colors[colorScheme].icon}
+              value={formValues.email}
+              onChangeText={handleChange('email')}
               onSubmitEditing={handleContinue}
               returnKeyType="done"
-              autoCapitalize="words"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              keyboardType="email-address"
               style={[
                 styles.input,
                 {
@@ -93,8 +181,15 @@ export default function LoginScreen() {
               </ThemedText>
             )}
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: buttonBackground }]}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: buttonBackground,
+                  opacity: isSubmitDisabled ? 0.55 : 1,
+                },
+              ]}
               onPress={handleContinue}
+              disabled={isSubmitDisabled}
               activeOpacity={0.9}
             >
               <ThemedText style={[styles.buttonText, { color: buttonTextColor }]}>
@@ -109,31 +204,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  avoidingView: {
-    flex: 1,
-    justifyContent: 'center',
-  },
   content: {
     gap: 16,
     flex: 1,
-    justifyContent: 'center'
-  },
-  badge: {
-    alignSelf: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-  },
-  badgeText: {
-    fontSize: 12,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    justifyContent: 'center',
   },
   title: {
     textAlign: 'center',
