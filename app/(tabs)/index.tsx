@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -197,7 +197,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </Confett>
+    </ThemedView>
     </>
   );
 }
