@@ -10,7 +10,6 @@ import { Team, useUser } from '@/contexts/user-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { Confetti } from "react-native-fast-confetti";
 
 export default function HomeScreen() {
   const { name, teams, setTeams } = useUser();
@@ -92,7 +91,6 @@ export default function HomeScreen() {
 
   return (
     <>
-    <Confetti />
     <ThemedView style={containerStyle}>
       <ScrollView
         contentContainerStyle={scrollContentStyle}
